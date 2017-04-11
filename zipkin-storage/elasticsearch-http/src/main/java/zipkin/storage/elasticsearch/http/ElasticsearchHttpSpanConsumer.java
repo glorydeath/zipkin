@@ -16,6 +16,8 @@ package zipkin.storage.elasticsearch.http;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+
+import com.google.common.base.Joiner;
 import zipkin.Span;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.Callback;
@@ -50,6 +52,7 @@ final class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer {
     for (Span span : spans) {
       Long timestamp = guessTimestamp(span);
       Long timestampMillis;
+      String serviceName = Joiner.on("").join(span.serviceNames());
       String index; // which index to store this span into
       if (timestamp != null) {
         timestampMillis = TimeUnit.MICROSECONDS.toMillis(timestamp);
@@ -58,7 +61,7 @@ final class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer {
         timestampMillis = null;
         index = indexNameFormatter.indexNameForTimestamp(System.currentTimeMillis());
       }
-      indexer.add(index, span, timestampMillis);
+      indexer.add(index, span, timestampMillis, serviceName);
     }
     return indexer;
   }

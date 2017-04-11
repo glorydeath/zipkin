@@ -31,7 +31,7 @@ final class HttpBulkSpanIndexer extends HttpBulkIndexer<Span> {
    *
    * <p>For example. {"traceId":".. becomes {"timestamp_millis":12345,"traceId":"...
    */
-  HttpBulkSpanIndexer add(String index, Span span, Long timestampMillis) {
+  HttpBulkSpanIndexer add(String index, Span span, Long timestampMillis, String serviceName) {
     String id = null; // Allow ES to choose an ID
     if (timestampMillis == null) {
       super.add(index, span, id);
@@ -39,9 +39,9 @@ final class HttpBulkSpanIndexer extends HttpBulkIndexer<Span> {
     }
     writeIndexMetadata(index, id);
     if (timestampMillis != null) {
-      body.write(prefixWithTimestampMillis(toJsonBytes(span), timestampMillis));
+      body.write(prefixWithServiceName(prefixWithTimestampMillis(toJsonBytes(span), timestampMillis), serviceName));
     } else {
-      body.write(toJsonBytes(span));
+      body.write(prefixWithServiceName(toJsonBytes(span), serviceName));
     }
     body.writeByte('\n');
 
@@ -54,6 +54,7 @@ final class HttpBulkSpanIndexer extends HttpBulkIndexer<Span> {
   }
 
   private static final byte[] TIMESTAMP_MILLIS_PREFIX = "{\"timestamp_millis\":".getBytes(UTF_8);
+  private static final byte[] SERVICE_NAME_PREFIX = "{\"service_name\":".getBytes(UTF_8);
 
   /**
    * In order to allow systems like Kibana to search by timestamp, we add a field "timestamp_millis"
@@ -69,6 +70,21 @@ final class HttpBulkSpanIndexer extends HttpBulkIndexer<Span> {
     pos += TIMESTAMP_MILLIS_PREFIX.length;
     for (int i = 0, length = dateAsString.length(); i < length; i++) {
       newSpanBytes[pos++] = (byte) dateAsString.charAt(i);
+    }
+    newSpanBytes[pos++] = ',';
+    // starting at position 1 discards the old head of '{'
+    System.arraycopy(input, 1, newSpanBytes, pos, input.length - 1);
+    return newSpanBytes;
+  }
+
+  static byte[] prefixWithServiceName(byte[] input, String serviceName) {
+    byte[] newSpanBytes =
+            new byte[SERVICE_NAME_PREFIX.length + serviceName.length() + input.length];
+    int pos = 0;
+    System.arraycopy(SERVICE_NAME_PREFIX, 0, newSpanBytes, pos, SERVICE_NAME_PREFIX.length);
+    pos += SERVICE_NAME_PREFIX.length;
+    for (int i = 0, length = serviceName.length(); i < length; i++) {
+      newSpanBytes[pos++] = (byte) serviceName.charAt(i);
     }
     newSpanBytes[pos++] = ',';
     // starting at position 1 discards the old head of '{'
