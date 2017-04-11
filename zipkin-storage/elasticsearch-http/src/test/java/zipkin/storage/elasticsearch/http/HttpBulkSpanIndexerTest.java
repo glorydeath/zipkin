@@ -70,7 +70,7 @@ public class HttpBulkSpanIndexerTest {
   public void doesntWriteSpanId() throws Exception {
     es.enqueue(new MockResponse());
 
-    indexer.add("test_zipkin_http-2016-10-01", TestObjects.LOTS_OF_SPANS[0], (Long) null);
+    indexer.add("test_zipkin_http-2016-10-01", TestObjects.LOTS_OF_SPANS[0], (Long) null, "service");
     indexer.execute(callback);
     callback.get();
 
@@ -83,7 +83,7 @@ public class HttpBulkSpanIndexerTest {
   public void writesSpanNaturallyWhenNoTimestamp() throws Exception {
     es.enqueue(new MockResponse());
 
-    indexer.add("test_zipkin_http-2016-10-01", TestObjects.LOTS_OF_SPANS[0], (Long) null);
+    indexer.add("test_zipkin_http-2016-10-01", TestObjects.LOTS_OF_SPANS[0], (Long) null, "service");
     indexer.execute(callback);
     callback.get();
 
@@ -105,7 +105,7 @@ public class HttpBulkSpanIndexerTest {
 
     CallbackCaptor<Void> callback = new CallbackCaptor<>();
     indexer
-        .add("zipkin-2016-10-01", TestObjects.TRACE.get(0), (Long) null)
+        .add("zipkin-2016-10-01", TestObjects.TRACE.get(0), (Long) null, "service")
         .execute(callback);
     callback.get();
 
