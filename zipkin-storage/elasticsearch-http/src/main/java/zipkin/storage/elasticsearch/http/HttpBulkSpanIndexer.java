@@ -78,6 +78,7 @@ final class HttpBulkSpanIndexer extends HttpBulkIndexer<Span> {
   }
 
   static byte[] prefixWithServiceName(byte[] input, String serviceName) {
+    serviceName = "\"" + serviceName + "\"";
     byte[] newSpanBytes =
             new byte[SERVICE_NAME_PREFIX.length + serviceName.length() + input.length];
     int pos = 0;
